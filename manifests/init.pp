@@ -81,10 +81,11 @@ class ssh (
   $sshd_config_hostkey                 = 'USE_DEFAULTS',
   $sshd_listen_address                 = undef,
   $sshd_hostbasedauthentication        = 'no',
+  $sshd_pubkeyauthentication           = 'yes',
   $sshd_ignoreuserknownhosts           = 'no',
   $sshd_ignorerhosts                   = 'yes',
   $manage_service                      = true,
-  $sshd_addressfamily                  = 'any',
+  $sshd_addressfamily                  = 'USE_DEFAULTS',
   $service_ensure                      = 'running',
   $service_name                        = 'USE_DEFAULTS',
   $service_enable                      = true,
@@ -124,6 +125,7 @@ class ssh (
       $default_service_hasstatus               = true
       $default_sshd_config_serverkeybits       = '1024'
       $default_sshd_config_hostkey             = [ '/etc/ssh/ssh_host_rsa_key' ]
+      $default_sshd_addressfamily              = 'any'
     }
     'Suse': {
       $default_packages                        = 'openssh'
@@ -144,6 +146,7 @@ class ssh (
       $default_service_hasstatus               = true
       $default_sshd_config_serverkeybits       = '1024'
       $default_sshd_config_hostkey             = [ '/etc/ssh/ssh_host_rsa_key' ]
+      $default_sshd_addressfamily              = 'any'
       case $::architecture {
         'x86_64': {
           if ($::operatingsystem == 'SLES') and ($::operatingsystemrelease =~ /^12\./) {
@@ -181,6 +184,7 @@ class ssh (
       $default_service_hasstatus               = true
       $default_sshd_config_serverkeybits       = '1024'
       $default_sshd_config_hostkey             = [ '/etc/ssh/ssh_host_rsa_key' ]
+      $default_sshd_addressfamily              = 'any'
     }
     'Solaris': {
       $default_ssh_config_hash_known_hosts     = undef
@@ -198,6 +202,7 @@ class ssh (
       $default_sshd_config_serverkeybits       = '768'
       $default_ssh_package_adminfile           = undef
       $default_sshd_config_hostkey             = [ '/etc/ssh/ssh_host_rsa_key' ]
+      $default_sshd_addressfamily              = undef
       case $::kernelrelease {
         '5.11': {
           $default_packages                      = ['network/ssh',
@@ -426,6 +431,12 @@ class ssh (
     }
   }
 
+  if $sshd_addressfamily == 'USE_DEFAULTS' {
+    $sshd_addressfamily_real = $default_sshd_addressfamily
+  } else {
+    $sshd_addressfamily_real = $sshd_addressfamily
+  }
+
   # validate params
   if $ssh_config_ciphers != undef {
     validate_array($ssh_config_ciphers)
@@ -551,6 +562,8 @@ class ssh (
 
   validate_re($sshd_hostbasedauthentication, '^(yes|no)$', "ssh::sshd_hostbasedauthentication may be either 'yes' or 'no' and is set to <${sshd_hostbasedauthentication}>.")
 
+  validate_re($sshd_pubkeyauthentication, '^(yes|no)$', "ssh::sshd_pubkeyauthentication may be either 'yes' or 'no' and is set to <${sshd_pubkeyauthentication}>.")
+
   validate_re($sshd_ignoreuserknownhosts, '^(yes|no)$', "ssh::sshd_ignoreuserknownhosts may be either 'yes' or 'no' and is set to <${sshd_ignoreuserknownhosts}>.")
 
   validate_re($sshd_ignorerhosts, '^(yes|no)$', "ssh::sshd_ignorerhosts may be either 'yes' or 'no' and is set to <${sshd_ignorerhosts}>.")
@@ -610,8 +623,11 @@ class ssh (
     'ssh-dsa','dsa': {
       $key = $::sshdsakey
     }
+    'ecdsa-sha2-nistp256': {
+          $key = $::sshecdsakey
+    }
     default: {
-      fail("ssh::ssh_key_type must be 'ssh-rsa', 'rsa', 'ssh-dsa', or 'dsa' and is <${ssh_key_type}>.")
+      fail("ssh::ssh_key_type must be 'ecdsa-sha2-nistp256', 'ssh-rsa', 'rsa', 'ssh-dsa', or 'dsa' and is <${ssh_key_type}>.")
     }
   }
 
@@ -779,9 +795,10 @@ class ssh (
 
   # export each node's ssh key
   @@sshkey { $::fqdn :
-    ensure => $ssh_key_ensure,
-    type   => $ssh_key_type,
-    key    => $key,
+    ensure       => $ssh_key_ensure,
+    host_aliases => [$::hostname, $::ipaddress],
+    type         => $ssh_key_type,
+    key          => $key,
   }
 
   file { 'ssh_known_hosts':
@@ -816,8 +833,12 @@ class ssh (
     create_resources('ssh_authorized_key', $keys_real)
   }
 
-  if $sshd_addressfamily != undef {
-    validate_re($sshd_addressfamily, '^(any|inet|inet6)$',
-      "ssh::sshd_addressfamily can be undef, 'any', 'inet' or 'inet6' and is set to ${sshd_addressfamily}.")
+  if $sshd_addressfamily_real != undef {
+    if $::osfamily == 'Solaris' {
+      fail("ssh::sshd_addressfamily is not supported on Solaris and is set to <${sshd_addressfamily}>.")
+    } else {
+      validate_re($sshd_addressfamily_real, '^(any|inet|inet6)$',
+        "ssh::sshd_addressfamily can be undef, 'any', 'inet' or 'inet6' and is set to ${sshd_addressfamily_real}.")
+    }
   }
 }

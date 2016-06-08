@@ -17,8 +17,6 @@
 Port 22
 #Protocol 2,1
 Protocol 2
-#AddressFamily any
-AddressFamily any
 
 # HostKey for protocol version 1
 #HostKey /etc/ssh/ssh_host_key
@@ -49,6 +47,7 @@ PermitRootLogin yes
 
 #RSAAuthentication yes
 #PubkeyAuthentication yes
+PubkeyAuthentication yes
 #AuthorizedKeysFile .ssh/authorized_keys
 
 # For this to work you will also need host keys in /etc/ssh/ssh_known_hosts

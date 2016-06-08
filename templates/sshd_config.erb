@@ -108,7 +108,7 @@ PAMAuthenticationViaKBDInt <%= @sshd_pamauthenticationviakbdint_real %>
 <% end -%>
 #PermitEmptyPasswords no
 <% if @sshd_config_permitemptypasswords != nil -%>
-PermitEmptyPasswords <% @sshd_config_permitemptypasswords %>
+PermitEmptyPasswords <%= @sshd_config_permitemptypasswords %>
 <% end -%>
 
 # Change to no to disable s/key passwords

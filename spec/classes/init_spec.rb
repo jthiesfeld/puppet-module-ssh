@@ -979,7 +979,7 @@ describe 'ssh' do
     end
   end
 
-  describe 'with sshd_config_permitemptypassword' do
+  describe 'with sshd_config_permitemptypasswords' do
     let :facts do
       default_facts.merge(
         {
@@ -989,7 +989,7 @@ describe 'ssh' do
 
     ['yes','no'].each do |value|
       context "set to #{value}" do
-        let (:params) {{ 'sshd_config_permitemptypassword' => value }}
+        let (:params) {{ 'sshd_config_permitemptypasswords' => value }}
 
         it { should contain_file('sshd_config').with_content(/^PermitEmptyPasswords #{value}$/) }
       end
@@ -997,7 +997,7 @@ describe 'ssh' do
 
     context 'set to invalid value on valid osfamily' do
       let :params do
-        { :sshd_config_permitemptypassword => 'invalid' }
+        { :sshd_config_permitemptypasswords => 'invalid' }
       end
 
       it 'should fail' do

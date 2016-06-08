@@ -991,7 +991,7 @@ describe 'ssh' do
       context "set to #{value}" do
         let (:params) {{ 'sshd_config_permitemptypassword' => value }}
 
-        it { should contain_file('sshd_config').with_content(/^PermitEmptyPassword #{value}$/) }
+        it { should contain_file('sshd_config').with_content(/^PermitEmptyPasswords #{value}$/) }
       end
     end
 
@@ -1003,7 +1003,7 @@ describe 'ssh' do
       it 'should fail' do
         expect {
           should contain_class('ssh')
-        }.to raise_error(Puppet::Error,/ssh::sshd_config_permitemptypassword may be either \'yes\' or \'no\' and is set to <invalid>\./)
+        }.to raise_error(Puppet::Error,/ssh::sshd_config_permitemptypasswords may be either \'yes\' or \'no\' and is set to <invalid>\./)
       end
     end
   end
